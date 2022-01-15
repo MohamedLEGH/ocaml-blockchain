@@ -2,4 +2,4 @@
 
 (executable
  (name hello_world)
- (libraries digestif))
+ (libraries unix digestif digestif.ocaml))
