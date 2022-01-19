@@ -47,17 +47,17 @@ let hash_block block nonce =
         ^ tx_list_string ^ miner_add
       in
       let hash_value = Digestif.SHA256.digest_string block_string in
-      Digestif.SHA256.to_hex hash_value
+      "0x" ^ Digestif.SHA256.to_hex hash_value
   | { timestamp = None; _ } ->
       raise (Invalid_block "Cannot hash the block, timestamp is missing")
   | { miner_address = None; _ } ->
       raise (Invalid_block "Cannot hash the block, miner address is missing")
 
 (* will need to add the wallet to sign the block *)
-let mine_block block difficulty =
+let mine_block_simple block difficulty =
   (* | {hash_val} need to do in recursive*)
   let timestamp_val = Some (Unix.time ())
-  and miner_add = Some (Address "0x04") (* to replace with wellet.address *)
+  and miner_add = Some (Address "0x04") (* to replace with wallet.address *)
   and nonce_val = ref 0
   and difficulty_string = String.make difficulty '0' in
   let block_current =
@@ -74,6 +74,21 @@ let mine_block block difficulty =
     hash_block_val := hash_block block_current !nonce_val
   done;
   { block with nonce = Some !nonce_val; hash_val = Some (Hash !hash_block_val) }
+
+let mine_block block difficulty_bits =
+  let start_time = Unix.gettimeofday () in
+  let target = Z.pred (Z.shift_left Z.one (256 - difficulty_bits))
+  (* target = 2^(256-difficulty_bits) - 1 because the interval start at 0 *)
+  and nonce_val = ref 0 in
+  let hash_block_val = ref (hash_block block !nonce_val) in
+  while Z.of_string !hash_block_val > target do
+    incr nonce_val;
+    hash_block_val := hash_block block !nonce_val;
+    print_endline !hash_block_val
+  done;
+  let end_time = Unix.gettimeofday () in
+  Printf.printf "Execution time: %fs\n%!" (end_time -. start_time);
+  nonce_val
 
 let tx1 = { value = 1.0; sender = "me"; receiver = "toto" }
 let tx2 = { value = 2.0; sender = "me"; receiver = "toto2" }

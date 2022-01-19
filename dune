@@ -2,4 +2,4 @@
 
 (executable
  (name hello_world)
- (libraries unix digestif digestif.ocaml))
+ (libraries unix zarith digestif digestif.c))
