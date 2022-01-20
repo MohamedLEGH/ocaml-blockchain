@@ -1,4 +1,6 @@
 type transaction = { value : float; sender : string; receiver : string }
+(* should add timestamp, index and signature *)
+
 type hash = Hash of string
 type address = Address of string
 type signature = Signature of string
@@ -23,29 +25,37 @@ let string_of_transaction tx =
   ^ ", receiver: " ^ tx.receiver ^ " }"
 
 let add_tx_block block tx =
-  { block with transactions = tx :: block.transactions }
+  { block with transactions = block.transactions @ [ tx ] }
 
-let rec string_of_tx_list = function
-  (* need to be tail recursive ?*)
-  | [] -> ""
-  | head :: tail -> string_of_transaction head ^ string_of_tx_list tail
+let string_of_tx_list tx_list =
+  let rec stringtxlist tx_list acc =
+    match tx_list with
+    | [] -> acc
+    | head :: tail -> stringtxlist tail (acc ^ string_of_transaction head)
+  in
+  stringtxlist tx_list ""
+
+let string_of_block block =
+  let nonce_val =
+    match block.nonce with Some n -> string_of_int n | None -> ""
+  and miner_add =
+    match block.miner_address with Some (Address m) -> m | None -> ""
+  and p_hash = match block.previous_hash with Hash p -> p
+  and timestamp_val =
+    match block.timestamp with Some t -> string_of_float t | None -> ""
+  and tx_list_string = string_of_tx_list block.transactions in
+  let block_string =
+    string_of_int block.index ^ p_hash ^ nonce_val ^ timestamp_val
+    ^ tx_list_string ^ miner_add
+  in
+  block_string
 
 let hash_block block nonce =
   match block with
-  | {
-   index;
-   previous_hash = Hash p_hash;
-   timestamp = Some timestamp_val;
-   transactions;
-   miner_address = Some (Address miner_add);
-   _;
-  } ->
-      let tx_list_string = string_of_tx_list transactions in
-      let block_string =
-        string_of_int index ^ p_hash ^ string_of_int nonce
-        ^ string_of_float timestamp_val
-        ^ tx_list_string ^ miner_add
-      in
+  | { timestamp = Some _; miner_address = Some (Address _); _ } ->
+      let nonce_option = Some nonce in
+      let block_with_nonce = { block with nonce = nonce_option } in
+      let block_string = string_of_block block_with_nonce in
       let hash_value = Digestif.SHA256.digest_string block_string in
       "0x" ^ Digestif.SHA256.to_hex hash_value
   | { timestamp = None; _ } ->
@@ -54,41 +64,16 @@ let hash_block block nonce =
       raise (Invalid_block "Cannot hash the block, miner address is missing")
 
 (* will need to add the wallet to sign the block *)
-let mine_block_simple block difficulty =
-  (* | {hash_val} need to do in recursive*)
-  let timestamp_val = Some (Unix.time ())
-  and miner_add = Some (Address "0x04") (* to replace with wallet.address *)
-  and nonce_val = ref 0
-  and difficulty_string = String.make difficulty '0' in
-  let block_current =
-    {
-      block with
-      nonce = Some !nonce_val;
-      timestamp = timestamp_val;
-      miner_address = miner_add;
-    }
-  in
-  let hash_block_val = ref (hash_block block_current !nonce_val) in
-  while not (String.starts_with ~prefix:difficulty_string !hash_block_val) do
-    incr nonce_val;
-    hash_block_val := hash_block block_current !nonce_val
-  done;
-  { block with nonce = Some !nonce_val; hash_val = Some (Hash !hash_block_val) }
 
 let mine_block block difficulty_bits =
-  let start_time = Unix.gettimeofday () in
-  let target = Z.pred (Z.shift_left Z.one (256 - difficulty_bits))
-  (* target = 2^(256-difficulty_bits) - 1 because the interval start at 0 *)
-  and nonce_val = ref 0 in
-  let hash_block_val = ref (hash_block block !nonce_val) in
-  while Z.of_string !hash_block_val > target do
-    incr nonce_val;
-    hash_block_val := hash_block block !nonce_val;
-    print_endline !hash_block_val
-  done;
-  let end_time = Unix.gettimeofday () in
-  Printf.printf "Execution time: %fs\n%!" (end_time -. start_time);
-  nonce_val
+  let target = Z.pred (Z.shift_left Z.one (256 - difficulty_bits)) in
+  let rec proof_of_work block acc =
+    let hash_block_val = hash_block block acc in
+    if Z.of_string hash_block_val < target then acc
+    else proof_of_work block (acc + 1)
+  in
+  let nonce_final = proof_of_work block 0 in
+  nonce_final
 
 let tx1 = { value = 1.0; sender = "me"; receiver = "toto" }
 let tx2 = { value = 2.0; sender = "me"; receiver = "toto2" }
@@ -107,6 +92,8 @@ let block1 =
 let block2 =
   { block1 with timestamp = Some 0.; miner_address = Some (Address "0x4") }
 
+let tx3 = { value = 10.0; sender = "network"; receiver = "mohamed" }
+let block3 = add_tx_block block2 tx3
 let last_hash = hash_block block2 0;;
 
 print_endline last_hash;;
