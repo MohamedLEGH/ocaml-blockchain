@@ -1,9 +1,7 @@
-type transaction = { value : float; sender : string; receiver : string }
-(* should add timestamp, index and signature *)
+open Transaction
 
 type hash = Hash of string
 type address = Address of string
-type signature = Signature of string
 
 type block = {
   index : int;
@@ -19,10 +17,6 @@ type block = {
 }
 
 exception Invalid_block of string
-
-let string_of_transaction tx =
-  "{ value : " ^ string_of_float tx.value ^ ", sender: " ^ tx.sender
-  ^ ", receiver: " ^ tx.receiver ^ " }"
 
 let add_tx_block block tx =
   { block with transactions = block.transactions @ [ tx ] }
@@ -74,27 +68,3 @@ let mine_block block difficulty_bits =
   in
   let nonce_final = proof_of_work block 0 in
   nonce_final
-
-let tx1 = { value = 1.0; sender = "me"; receiver = "toto" }
-let tx2 = { value = 2.0; sender = "me"; receiver = "toto2" }
-
-let block1 =
-  {
-    index = 0;
-    previous_hash = Hash "";
-    nonce = None;
-    timestamp = None;
-    transactions = [ tx1; tx2 ];
-    miner_address = None;
-    hash_val = None;
-  }
-
-let block2 =
-  { block1 with timestamp = Some 0.; miner_address = Some (Address "0x4") }
-
-let tx3 = { value = 10.0; sender = "network"; receiver = "mohamed" }
-let block3 = add_tx_block block2 tx3
-let last_hash = hash_block block2 0;;
-
-print_endline last_hash;;
-print_endline (string_of_transaction tx1)
