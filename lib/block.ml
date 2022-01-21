@@ -22,14 +22,47 @@ let add_tx_block block tx =
   { block with transactions = block.transactions @ [ tx ] }
 
 let string_of_tx_list tx_list =
+  match tx_list with
+  | [] -> "[]"
+  | _ ->
+      let rec stringtxlist tx_list acc =
+        match tx_list with
+        | [] -> acc
+        | head :: tail -> stringtxlist tail (acc ^ string_of_transaction head)
+      in
+      stringtxlist tx_list ""
+
+let string_of_tx_list_raw tx_list =
   let rec stringtxlist tx_list acc =
     match tx_list with
     | [] -> acc
-    | head :: tail -> stringtxlist tail (acc ^ string_of_transaction head)
+    | head :: tail -> stringtxlist tail (acc ^ string_of_transaction_raw head)
   in
   stringtxlist tx_list ""
 
 let string_of_block block =
+  let nonce_val =
+    match block.nonce with Some n -> string_of_int n | None -> "None"
+  and miner_add =
+    match block.miner_address with
+    | Some (Address m) -> "'" ^ m ^ "'"
+    | None -> "None"
+  and p_hash = match block.previous_hash with Hash p -> "'" ^ p ^ "'"
+  and timestamp_val =
+    match block.timestamp with Some t -> string_of_float t | None -> "None"
+  and tx_list_string = string_of_tx_list block.transactions
+  and hash_val =
+    match block.hash_val with Some (Hash a) -> "'" ^ a ^ "'" | None -> "None"
+  in
+  let block_string =
+    "{index: " ^ string_of_int block.index ^ ", previous_hash: " ^ p_hash
+    ^ ", nonce: " ^ nonce_val ^ ", timestamp: " ^ timestamp_val
+    ^ ", timestamps: " ^ tx_list_string ^ ", miner_address: " ^ miner_add
+    ^ ", hash_val: " ^ hash_val ^ "}"
+  in
+  block_string
+
+let string_of_block_raw block =
   let nonce_val =
     match block.nonce with Some n -> string_of_int n | None -> ""
   and miner_add =
@@ -37,7 +70,7 @@ let string_of_block block =
   and p_hash = match block.previous_hash with Hash p -> p
   and timestamp_val =
     match block.timestamp with Some t -> string_of_float t | None -> ""
-  and tx_list_string = string_of_tx_list block.transactions in
+  and tx_list_string = string_of_tx_list_raw block.transactions in
   let block_string =
     string_of_int block.index ^ p_hash ^ nonce_val ^ timestamp_val
     ^ tx_list_string ^ miner_add
@@ -49,7 +82,7 @@ let hash_block block nonce =
   | { timestamp = Some _; miner_address = Some (Address _); _ } ->
       let nonce_option = Some nonce in
       let block_with_nonce = { block with nonce = nonce_option } in
-      let block_string = string_of_block block_with_nonce in
+      let block_string = string_of_block_raw block_with_nonce in
       let hash_value = Digestif.SHA256.digest_string block_string in
       "0x" ^ Digestif.SHA256.to_hex hash_value
   | { timestamp = None; _ } ->
