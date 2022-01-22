@@ -16,15 +16,22 @@ let block1 =
     hash_val = None;
   }
 
+let miner_address = Some (Address "0x4")
+
 let block2 =
-  { block1 with timestamp = Some 0.; miner_address = Some (Address "0x4") }
+  { block1 with timestamp = Some 0.; miner_address = miner_address }
 
 let tx3 = { value = 10.0; sender = "network"; receiver = "mohamed" }
 let block3 = add_tx_block block2 tx3
 let last_hash = hash_block block2 0
-let blockchain_new = { blocklist = []; tx_pool = []; difficulty_bits = 4 }
-let blockchain1 = create_genesis_block blockchain_new (Some (Address "0x4"));;
+let blockchain_new = { blocklist = []; tx_pool = []; difficulty_bits = 10 }
+
+let blockchain1 = create_genesis_block blockchain_new miner_address
+let blockchain12 = add_tx_blockchain blockchain1 tx1
+let blockchain13 = add_tx_blockchain blockchain12 tx2
+let blockchain2 = mine_new_block blockchain13 miner_address;;
 
 print_endline last_hash;;
 print_endline (string_of_transaction tx1);;
-print_endline (string_of_blockchain blockchain1)
+print_endline (string_of_blockchain blockchain1);;
+print_endline (string_of_blockchain blockchain2)

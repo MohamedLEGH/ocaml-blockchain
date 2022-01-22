@@ -57,7 +57,7 @@ let string_of_block block =
   let block_string =
     "{index: " ^ string_of_int block.index ^ ", previous_hash: " ^ p_hash
     ^ ", nonce: " ^ nonce_val ^ ", timestamp: " ^ timestamp_val
-    ^ ", timestamps: " ^ tx_list_string ^ ", miner_address: " ^ miner_add
+    ^ ", transactions: " ^ tx_list_string ^ ", miner_address: " ^ miner_add
     ^ ", hash_val: " ^ hash_val ^ "}"
   in
   block_string
