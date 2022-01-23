@@ -34,4 +34,10 @@ let blockchain2 = mine_new_block blockchain13 miner_address;;
 print_endline last_hash;;
 print_endline (string_of_transaction tx1);;
 print_endline (string_of_blockchain blockchain1);;
-print_endline (string_of_blockchain blockchain2)
+print_endline (string_of_blockchain blockchain2);;
+
+let zmq_context = Zmq.Context.create() in
+let socket = Zmq.Socket.create zmq_context Zmq.Socket.rep in
+let _ = Zmq.Socket.bind socket "tcp://*:5000" in
+let msg = Zmq.Socket.recv socket in
+print_endline msg
