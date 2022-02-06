@@ -2,4 +2,6 @@
 
 (library
  (name lib)
- (libraries unix zarith digestif digestif.c))
+ (libraries unix zarith digestif digestif.c)
+ (preprocess
+  (pps ppx_yojson_conv)))

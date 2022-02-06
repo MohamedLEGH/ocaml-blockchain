@@ -8,33 +8,13 @@ type blockchain = {
       (* accounts ?? *)
       (* block_reward : float; a ajouter plus tard *)
 }
+[@@deriving yojson]
 
 exception Non_empty_blocklist
 exception Empty_blocklist
 
-let string_of_blocklist blocklist =
-  match blocklist with
-  | [] -> "[]"
-  | _ ->
-      let rec stringblocklist blocklist acc =
-        match blocklist with
-        | [] -> acc
-        | head :: tail -> stringblocklist tail (acc ^ string_of_block head)
-      in
-      stringblocklist blocklist ""
-
-let string_of_blockchain blockchain =
-  (* only for printing *)
-  let chain_string =
-    "{blocklist: "
-    ^ string_of_blocklist blockchain.blocklist
-    ^ ", tx_pool: "
-    ^ string_of_tx_list blockchain.tx_pool
-    ^ ", difficulty_bits: "
-    ^ string_of_int blockchain.difficulty_bits
-    ^ "}"
-  in
-  chain_string
+let string_of_blockchain blockchain = blockchain |> yojson_of_blockchain |> Yojson.Safe.pretty_to_string
+let blockchain_of_string string_val = string_val |> Yojson.Safe.from_string |> blockchain_of_yojson
 
 let add_block_blockchain blockchain block =
   (* need to verify the data of the block *)
@@ -51,7 +31,7 @@ let create_genesis_block blockchain miner_address =
       let first_block =
         {
           index = 0;
-          previous_hash = Hash "";
+          previous_hash = "";
           nonce = None;
           timestamp = Some timestamp;
           transactions = [];
@@ -62,7 +42,7 @@ let create_genesis_block blockchain miner_address =
       let nonce = mine_block first_block blockchain.difficulty_bits in
       let hash_val = hash_block first_block nonce in
       let mined_block =
-        { first_block with nonce = Some nonce; hash_val = Some (Hash hash_val) }
+        { first_block with nonce = Some nonce; hash_val = Some (hash_val) }
       in
       add_block_blockchain blockchain mined_block
   | _ -> raise Non_empty_blocklist
@@ -97,7 +77,7 @@ let mine_new_block blockchain miner_address =
       let nonce = mine_block new_block blockchain.difficulty_bits in
       let hash_val = hash_block new_block nonce in
       let mined_block =
-        { new_block with nonce = Some nonce; hash_val = Some (Hash hash_val) }
+        { new_block with nonce = Some nonce; hash_val = Some hash_val }
       in
       let blockchain_no_pool = { blockchain with tx_pool = [] } in
       add_block_blockchain blockchain_no_pool mined_block

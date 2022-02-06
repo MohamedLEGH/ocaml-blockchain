@@ -1,6 +1,5 @@
 ;; This declares the main executable implemented by main.ml
 
 (executable
- (name server)
+ (name client)
  (libraries zmq base_bigstring lib))
-

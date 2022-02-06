@@ -1,36 +1,23 @@
 open Transaction
 
-type hash = Hash of string
-type address = Address of string
-
 type block = {
   index : int;
-  previous_hash : hash;
+  previous_hash : string;
   nonce : int option;
   timestamp : float option;
   transactions : transaction list;
-  miner_address : address option;
-  hash_val : hash option;
+  miner_address : string option;
+  hash_val : string option;
       (* miner_signature : signature; a ajouter plus tard *)
       (* block_reward : float; a ajouter plus tard *)
       (* reward_tx_number : int; a ajouter plus tard *)
 }
+[@@deriving yojson]
 
 exception Invalid_block of string
 
 let add_tx_block block tx =
   { block with transactions = block.transactions @ [ tx ] }
-
-let string_of_tx_list tx_list =
-  match tx_list with
-  | [] -> "[]"
-  | _ ->
-      let rec stringtxlist tx_list acc =
-        match tx_list with
-        | [] -> acc
-        | head :: tail -> stringtxlist tail (acc ^ string_of_transaction head)
-      in
-      stringtxlist tx_list ""
 
 let string_of_tx_list_raw tx_list =
   let rec stringtxlist tx_list acc =
@@ -40,34 +27,15 @@ let string_of_tx_list_raw tx_list =
   in
   stringtxlist tx_list ""
 
-let string_of_block block =
-  let nonce_val =
-    match block.nonce with Some n -> string_of_int n | None -> "None"
-  and miner_add =
-    match block.miner_address with
-    | Some (Address m) -> "'" ^ m ^ "'"
-    | None -> "None"
-  and p_hash = match block.previous_hash with Hash p -> "'" ^ p ^ "'"
-  and timestamp_val =
-    match block.timestamp with Some t -> string_of_float t | None -> "None"
-  and tx_list_string = string_of_tx_list block.transactions
-  and hash_val =
-    match block.hash_val with Some (Hash a) -> "'" ^ a ^ "'" | None -> "None"
-  in
-  let block_string =
-    "{index: " ^ string_of_int block.index ^ ", previous_hash: " ^ p_hash
-    ^ ", nonce: " ^ nonce_val ^ ", timestamp: " ^ timestamp_val
-    ^ ", transactions: " ^ tx_list_string ^ ", miner_address: " ^ miner_add
-    ^ ", hash_val: " ^ hash_val ^ "}"
-  in
-  block_string
+let string_of_block block = block |> yojson_of_block |> Yojson.Safe.pretty_to_string
+let block_of_string string_val = string_val |> Yojson.Safe.from_string |> block_of_yojson
 
 let string_of_block_raw block =
   let nonce_val =
     match block.nonce with Some n -> string_of_int n | None -> ""
   and miner_add =
-    match block.miner_address with Some (Address m) -> m | None -> ""
-  and p_hash = match block.previous_hash with Hash p -> p
+    match block.miner_address with Some m -> m | None -> ""
+  and p_hash = match block.previous_hash with p -> p
   and timestamp_val =
     match block.timestamp with Some t -> string_of_float t | None -> ""
   and tx_list_string = string_of_tx_list_raw block.transactions in
@@ -79,7 +47,7 @@ let string_of_block_raw block =
 
 let hash_block block nonce =
   match block with
-  | { timestamp = Some _; miner_address = Some (Address _); _ } ->
+  | { timestamp = Some _; miner_address = Some _; _ } ->
       let nonce_option = Some nonce in
       let block_with_nonce = { block with nonce = nonce_option } in
       let block_string = string_of_block_raw block_with_nonce in
