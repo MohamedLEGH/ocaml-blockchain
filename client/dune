@@ -1,4 +1,4 @@
-;; This declares the main executable implemented by main.ml
+;; This declares the executable implemented by client.ml
 
 (executable
  (name client)
