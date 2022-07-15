@@ -14,6 +14,7 @@ Zmq.Socket.bind(socket, "tcp://127.0.0.1:5000");
 
 let bc = {blocklist: [], tx_pool: [], difficulty_bits: 10};
 let rec main = () => {
+  print_endline("Wainting for next command");
   let json = Zmq.Socket.recv(socket) |> Yojson.Safe.from_string;
   let topic = json |> member("topic") |> to_string;
   let msg = json |> member("msg") |> to_string;
@@ -21,11 +22,13 @@ let rec main = () => {
   | "mining" =>
     let miner_address = Some(msg);
     let bc1 = mine_block(bc, miner_address);
-    string_of_blockchain(bc1) |> print_endline;
+    Zmq.Socket.send(socket, string_of_blockchain(bc1));
   | _ => raise(Rpc_Non_Valid("Non valid method"))
   };
   main();
 };
+
+print_endline("Starting blockchain node");
 main();
 Zmq.Socket.close(socket);
 Zmq.Context.terminate(ctx);

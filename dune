@@ -1,4 +1,4 @@
-;; This declares the main executable implemented by main.ml
+;; This declares the main executable implemented by server.re
 
 (executable
  (name server)

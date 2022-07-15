@@ -13,20 +13,20 @@
       sendtx amount receiver
    */
 
-{
-  let ctx = Zmq.Context.create();
-  let socket = Zmq.Socket.create(ctx, Zmq.Socket.req);
-  let _ = Zmq.Socket.connect(socket, "tcp://127.0.0.1:5000");
-  let topic = "mining";
-  let msg = "0x34";
-  Zmq.Socket.send_all(socket, [topic, msg]);
+let ctx = Zmq.Context.create();
+let socket = Zmq.Socket.create(ctx, Zmq.Socket.req);
+let _ = Zmq.Socket.connect(socket, "tcp://127.0.0.1:5000");
+let topic = "mining";
+let msg = "0x34";
+let action1 = `Assoc([("topic", `String(topic)), ("msg", `String(msg))]);
+Zmq.Socket.send(socket, Yojson.Safe.to_string(action1));
+let response = Zmq.Socket.recv(socket);
+print_endline(response);
+/* change to send only one message : stringified json rpc payload */
 
-  /* change to send only one message : stringified json rpc payload */
-
-  /* Zmq.Socket.send socket "toto";
-        let msg = Zmq.Socket.recv socket in
-        print_endline msg;
-     */
-  Zmq.Socket.close(socket);
-  Zmq.Context.terminate(ctx);
-};
+/* Zmq.Socket.send socket "toto";
+      let msg = Zmq.Socket.recv socket in
+      print_endline msg;
+   */
+Zmq.Socket.close(socket);
+Zmq.Context.terminate(ctx);
